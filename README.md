@@ -160,7 +160,7 @@ This turn,considering only the questions marked as Ethics and with a golden, the
 As for the group of questions without the golden reference, the system got 45 out of 103 correct. The full results are can be found at results.xlsx.
 
 
-The difference in performance may attributed to how the exams were inputed in the system: all-at-once results in TF-IDF measures different form a one-by-one input. Also, in order to speed up the process and attempt to restrict the corpus to Ethics only, we only inputed in the system the questions marked as Ethics.
+The difference in performance may attributed to how the exams were inputed in the system: all-at-once results in TF-IDF measures different form a one-by-one input. Also, in order to speed up the process and attempt to restrict the corpus to Ethics only, we only inputed in the system the questions marked as Ethics. The files used as such input are in data/raw/exams/ethics/.
 
 Future work is to be made as to wheter or not this differences are relevant (all-at-once vs one-at-a-time and full exam vs Ethics only area). Also, the use of different types of distance (eg: Euclidian) may result in a diferent output. And, as discussed in class, changing the graph structure by say, adding another layer of articles, will probably affect the result. Other possibilities are to combine some or all the variants suggested previuosly in a "voting" system, outputing only the answer and article(s) most "voted".
 
