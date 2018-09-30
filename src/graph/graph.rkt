@@ -1,60 +1,87 @@
 #lang racket
 
- (require racket/trace)
+(require
+  racket/block
+  racket/trace
+  racket/undefined
+  data/heap
+  dyoo-while-loop)
 
-(provide 
-norm
-dif
-dist
-enumerate-list
-get-shortest-answer
-get-best-law
-)
+(require "dist.rkt"
+         "../data-structures.rkt")
 
-;obs: Para calculo de distancia, foi usada distancia euclideana.
-;calcula a norma de vetor.
-(define (norm vec)
-    (sqrt (for/fold ([sum 0.0])
-        ([x (in-vector vec)])
-        (+ sum (* x x)))))
+(provide
+ dijkstra
+ to-graph
+ get-distance-article-answer
+ node
+ set-node-neineighbors!
+ node-neineighbors)
 
-;calcula a diferença entre cada elemento (v1-v2).
-(define (dif v1 v2)
-    (vector-map - v1 v2))
+;; retorna o dijkstra a partir de qualquer distancia
+(define (dij-from dist)
+  (define (Dijkstra graph source)
+    (define (operator-less a b)
+      (< (cdr a) (cdr b)))
+    (define node-queue (make-heap operator-less))
+    (heap-add! node-queue (cons source 0))
 
-;define valor da distancia do vetor. 
-(define (dist v1 v2)
-    (norm (dif v1 v2)))
+    (define distances-from-source (make-hash))
+    (for ([node graph])
+      (dict-set! distances-from-source node +inf.f))
 
-;constroi nova lista com valores enumerados.
-(define (enumerate-list lista start)
-    (define (aux lista i)
-        (match lista
-            [(list) (list)]
-            [el (cons (list (first el) i) (aux (rest el) (add1 i)))]))
-    (aux lista start))
+    (dict-set! distances-from-source source 0)
+    (define previous (make-hash))
 
-;cria lista de distancia entre lei e respostas
-(define (get-shortest-answer law questions)
-    (define (get-distance-law-question question-enum)
-        (match-define (list question i) question-enum)
-        (dist question law))
-    (define questions-enum (enumerate-list questions 0))
-    (define question-enum (argmin get-distance-law-question questions-enum))
-    (match-define (list question i) question-enum)
-    (define dist-question-answer (dist question law))
-    (list i dist-question-answer))
+    (while (not (zero? (heap-count node-queue)))
+           (match-define (cons u u-dist) (heap-min node-queue))
+           (define u-vector (node-vector u))
+           (define u-neigs (node-neineighbors u))
+           (heap-remove-min! node-queue)
+           (for ([v u-neigs])
+             (define v-vector (node-vector v))
+             (define alt (+ u-dist (dist u-vector v-vector)))
+             (if (< alt (dict-ref distances-from-source v))
+                 (block
+                  (dict-set! distances-from-source v alt)
+                  (dict-set! previous v u)
+                  (heap-add! node-queue (cons v alt)))
+                 void)))
 
+    (values distances-from-source previous))
 
-;cria lista de distancia entre lei e respostas
-(define (get-best-law question laws answers)
-    (define laws-enum (enumerate-list laws 0))
+  Dijkstra)
 
-    (define (update-law-dist-lawid-answerid law-id)
-        (match-define (list law idlaw) law-id)
-        (match-define (list id-answer dist-law-answer) (get-shortest-answer law answers))
-        (define law-dist (dist question law))
-        (list (+ law-dist dist-law-answer) idlaw id-answer))
+;; dijkstra a partir da distancia euclidiana
+(define dijkstra (dij-from dist))
 
-    (define updated-laws (map update-law-dist-lawid-answerid laws-enum))
-    (argmin (lambda (x) (first x)) updated-laws))
+;; Transforma em grafo, dado a primeira questão, camadas intermediarias de artigos e as respostas
+(define (to-graph question answers . list-articles)
+  (set-node-neineighbors! question (first list-articles))
+
+  (for ([articles1 list-articles]
+        [articles2 (rest list-articles)])
+    (for ([article1 articles1])
+      (set-node-neineighbors! article1 articles2)))
+
+  (for ([article (last list-articles)])
+    (set-node-neineighbors! article answers))
+  (for ([answer answers])
+    (set-node-neineighbors! answer (list)))
+  (append (list question) (apply append list-articles) answers))
+
+;; Calcula a menor distância, o melhor artigo e a melhor resposta de um grafo com uma questão,
+;; uma camada intermediaria de artigos e uma camada final de respostas
+(define (get-distance-article-answer question articles answers [dist dist])
+    (define graph (to-graph question answers articles))
+    (define-values (distances previous) ((dij-from dist) graph question))
+    (define min-distance
+        (for/fold ([dist +inf.f])
+            ([answer answers])
+            (min dist (dict-ref distances answer))))
+    (define best-answer
+        (for/first ([answer answers]
+            #:when (= min-distance (dict-ref distances answer)))
+            answer))
+    (define best-article (dict-ref previous best-answer))
+    (values min-distance best-article best-answer))

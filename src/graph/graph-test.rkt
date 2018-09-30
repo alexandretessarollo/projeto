@@ -1,40 +1,73 @@
 #lang racket
 
 (require rackunit)
+(require racket/block)
 
-(require "graph.rkt")
+(require "graph.rkt"
+         "../data-structures.rkt")
 
-(check-equal? (dif (vector) (vector)) (vector) "dif of vector with no size")
-(check-equal? (dif (vector 1.) (vector 1.)) (vector 0.) "dif must be vector 0")
-(check-equal? (dif (vector 1. 2.) (vector 1. 1.2)) (vector 0. 0.8) "dif of size 2 not equal")
+(block
+    (define node1 (node "n1" (vector 0)))
+    (define graph (list node1))
+    (define-values (distances previous) (dijkstra graph node1))
+    (check-equal? (dict-ref distances node1) 0))
 
-(check-equal? (dist (vector 0. 3.) (vector 4. 0.)) 5.  "dif of pitagora theorem not equal")
+(block
+    (define node1 (node "n1" (vector 0)))
+    (define node2 (node "n2" (vector 1)))
+    (set-node-neineighbors! node2 (list node1))
+    (set-node-neineighbors! node1 (list node2))
 
-(check-equal? (enumerate-list (list) 0) (list) "enumerate empty list")
-(check-equal? (enumerate-list (list 2) 0) (list (list 2 0)) "enumerate list of element 2")
-(check-equal? (enumerate-list (list 2) 2) (list (list 2 2)) "enumerate list of element 2")
+    (define graph (list node1 node2))
+    (define-values (distances previous) (dijkstra graph node1))
+    (check-equal? (dict-ref distances node1) 0)
+    (check-equal? (dict-ref distances node2) 1.)
+    (check-equal? (dict-ref previous node2) node1)
+)
 
-(let* (
-    [law (vector 0)]
-    [ans1 (list (vector 1) 3)]
-    [ans2 (list (vector 2) 2)]
+(block
+    (define question (node "q" (vector 0)))
+    
+    (define art1 (node "art1" (vector 1)))
+    (define art2 (node "art2" (vector -2)))
+    (define articles1 (list art1 art2))
 
-    [ans1withD (list 3 1.)]
-    [ans2withD (list 2 2.)]
+    (define art3 (node "art3" (vector 1)))
+    (define art4 (node "art4" (vector -2)))
+    (define articles2 (list art3 art4))
 
-    [vans (list (vector 1) (vector 2))])
+    (define ans1 (node "ans1" (vector -3)))
+    (define ans2 (node "ans2" (vector 7)))
+    (define answers (list ans1 ans2))
 
-    (check-equal? (get-shortest-answer law (rest vans)) (list 0 2.))
-    (check-equal? (get-shortest-answer law vans) (list 0 1.))
-    (check-equal? (get-shortest-answer law (reverse vans)) (list 1 1.)))
+    (define graph (to-graph question answers articles1 articles2))
+    (check-equal? graph (list question art1 art2 art3 art4 ans1 ans2)))
 
 
-(let* (
-    [question (vector 0)]
-    [question2 (vector 1)]
-    [laws (list (vector -1.) (vector 2.) )]
-    [answers (list (vector 0.) (vector 1.) )])
+(block
+    (define question (node "q" (vector 0)))
+    
+    (define art1 (node "art1" (vector 1)))
+    (define art2 (node "art2" (vector -2)))
+    (define articles (list art1 art2))
 
-    (check-equal? (get-best-law question laws answers) (list 2. 0 0))
-    (check-equal? (get-best-law question2 laws answers) (list 2. 1 1)))
+    (define ans1 (node "ans1" (vector -3)))
+    (define ans2 (node "ans2" (vector 7)))
+    (define answers (list ans1 ans2))
 
+    (define graph (to-graph question answers articles))
+    (check-equal? graph (list question art1 art2 ans1 ans2))
+    (check-equal? (node-neineighbors question) articles)
+    (check-equal? (node-neineighbors art1) answers)
+    (check-equal? (node-neineighbors art2) answers)
+    (check-equal? (node-neineighbors ans2) (list))
+
+    (define-values (dists previous) (dijkstra graph question))
+    (check-equal? (dict-ref dists ans1) 3.)
+    (check-equal? (dict-ref dists ans2) 7.)
+    (check-equal? (dict-ref previous ans1) art2)
+
+    (define-values (min-dist best-art best-ans) (get-distance-article-answer question articles answers))
+    (check-equal? min-dist 3.)
+    (check-equal? best-ans ans1)
+    (check-equal? best-art art2))
