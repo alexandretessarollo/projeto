@@ -145,6 +145,27 @@ To execute coverage command, run:
 raco cover -f html src
 ```
 
+
+### Results
+
+
+Out of 27 exams provided in xml format, 9 had no "AREA" attribute in the questions. Within the remaining 18 exams there were 185 questions identified as an Ethics area question. All of such questions were fed into the program, one exam at a time, and the results will be discussed in a while.
+
+It was also provided a list of possibile justifications for each correct answer, the "golden". It is worth noticing that some Ethics questions have no golden, as well as there is a golden for questions that were not assigned as Ethics. Regardless of having a golden or not, all the correct answers were known.
+
+In the original article (https://arxiv.org/abs/1712.05128) the database had 30 questions and the system could only get 10 correct - providing the correct justification for 8 of them.
+
+This turn,considering only the questions marked as Ethics and with a golden, there was 185 questions in the database. Using cosine as a distance function in our graph, the system managed to get 80 of them correct. Within the Ethics questions with golden the system was correct in 35 out of 82, while associating the correct justification for 14 of those.
+
+As for the group of questions without the golden reference, the system got 45 out of 103 correct. The full results are can be found at results.xlsx.
+
+
+The difference in performance may attributed to how the exams were inputed in the system: all-at-once results in TF-IDF measures different form a one-by-one input. Also, in order to speed up the process and attempt to restrict the corpus to Ethics only, we only inputed in the system the questions marked as Ethics.
+
+Future work is to be made as to wheter or not this differences are relevant (all-at-once vs one-at-a-time and full exam vs Ethics only area). Also, the use of different types of distance (eg: Euclidian) may result in a diferent output. And, as discussed in class, changing the graph structure by say, adding another layer of articles, will probably affect the result. Other possibilities are to combine some or all the variants suggested previuosly in a "voting" system, outputing only the answer and article(s) most "voted".
+
+
+
 ### Participações
 | Aluno         | Tarefas                                        |
 | ------------- |:----------------------------------------------:|
